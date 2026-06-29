@@ -1,0 +1,11 @@
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+
+# Local output files from experiments
+*.mat
+*.fig
+*.avi
+*.mp4
+*.gif

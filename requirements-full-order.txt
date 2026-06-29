@@ -1,0 +1,5 @@
+-r requirements.txt
+
+# Required only for the full-order walker examples.
+# The scripts import this package as `pinocchio`.
+pin
