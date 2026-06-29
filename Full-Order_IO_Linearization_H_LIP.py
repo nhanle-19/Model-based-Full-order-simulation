@@ -14,19 +14,46 @@ Date: 2026-01-19
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
-import pinocchio as pin
 from math import comb
+from pathlib import Path
+
+try:
+    import pinocchio as pin
+except ModuleNotFoundError as exc:
+    pin = None
+    PINOCCHIO_IMPORT_ERROR = exc
+else:
+    PINOCCHIO_IMPORT_ERROR = None
 
 # ==============================
 # Model definition
 # ==============================
 # Load URDF with planar root (no floating base; motion in xz plane)
-urdf = "five_link_walker.urdf"
-model = pin.buildModelFromUrdf(urdf, root_joint=pin.JointModelPlanar())
+URDF_PATH = Path(__file__).with_name("five_link_walker.urdf")
+urdf = str(URDF_PATH)
+
+if pin is not None and URDF_PATH.exists():
+    model = pin.buildModelFromUrdf(urdf, root_joint=pin.JointModelPlanar())
+else:
+    model = None
 
 # ==============================
 # Functions
 # ==============================
+def ensure_model_available():
+    """Validate optional full-order dependencies before running the simulation."""
+    if not URDF_PATH.exists():
+        raise FileNotFoundError(
+            f"Missing robot model: {URDF_PATH.name}. Place the URDF next to this script "
+            "before running the full-order examples."
+        )
+    if pin is None:
+        raise RuntimeError(
+            "Pinocchio is required for the full-order examples. "
+            "Install the `pin` package, then run this script again."
+        )
+
+
 def joint_idx_q(model, joint_name):
     """Return the index of the joint's first coordinate in the configuration vector q."""
     jid = model.getJointId(joint_name)
@@ -717,6 +744,8 @@ def check_stance_pinned(model, q_hist, v_hist, dt, stance_fid,
 # Main Function
 # ==============================
 def main():
+    ensure_model_available()
+
     add_point_frame(model, "right_shin", "right_foot_point", [0.0, 0.0, 0.4])
     add_point_frame(model, "left_shin",  "left_foot_point",  [0.0, 0.0, 0.4])
 
@@ -828,4 +857,7 @@ def main():
     
     
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except (FileNotFoundError, RuntimeError) as exc:
+        raise SystemExit(f"Error: {exc}") from None

@@ -6,7 +6,7 @@ close all
 clc
 
 %%%%%%%%%%%%%%%%%%%%%%%%%
-%%% Declear variables %%%
+%%% Declare variables %%%
 %%%%%%%%%%%%%%%%%%%%%%%%%
 
 % Model variable (Cassie)
@@ -31,7 +31,7 @@ ST = sinh(Ts/Tc);
 %%% Simulation  %%%
 %%%%%%%%%%%%%%%%%%%
 
-out = sim('SIMrun.slx','StopTime','1.5'); % run simulation
+out = sim('SIMrun_LIP.slx','StopTime','1.5'); % run simulation
 
 x_pos = squeeze(out.CoM.Data);
 foot_pos = squeeze(out.footout.Data);

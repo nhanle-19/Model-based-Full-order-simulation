@@ -3,19 +3,15 @@ Author: Nhan Le
 Date: 2026-01-19
 """
 
-# ==============================
-# Imports
-# ==============================
 import numpy as np
-import diffrax as dfx
-import jax.numpy as jnp
 import matplotlib.pyplot as plt
+import argparse
+from scipy.integrate import solve_ivp
 
-# ==============================
-# Functions
-# ==============================
-def dynamic_eq(t,x,ld):
-    return jnp.array([x[1],ld**2 * x[0]])
+
+def dynamic_eq(t, x, ld):
+    """Single-support H-LIP dynamics: x = [CoM position; CoM velocity]."""
+    return np.array([x[1], ld**2 * x[0]])
 
 def animate_xz_com_foot(x_pos, foot_pos, z0=1.0,
                         frames_per_segment=30,
@@ -121,7 +117,7 @@ def animate_xz_com_foot(x_pos, foot_pos, z0=1.0,
 # ==============================
 # Main Function
 # ==============================
-def main():
+def main(show_plot=True):
     # Constants / Parameters
     z0 = 0.5           # m (COM height)
     g  = 9.81 
@@ -141,36 +137,36 @@ def main():
     i = 0                        # initial start time
     u = np.array([0.0])          # initial cartesian step
     
-    # ---- User Input ----
-   
-
-    # ---- Run ode45 equivalent solver ----
-    term = dfx.ODETerm(dynamic_eq)
-    solver = dfx.Dopri5()  
-
-    # ---- Output ----
+    # ---- Run ode45-equivalent solver ----
     while i <= stoptime:
-    # integrate within-step dynamics
-        sol = dfx.diffeqsolve(term,solver,t0=0.0,t1=Ts,y0=jnp.asarray(xf)[:, -1].reshape(-1),args=ld,dt0=1e-3,saveat=dfx.SaveAt(t1=True))    # run solver
-        x = sol.ys
-        x = np.array(sol.ys, dtype=float).reshape(2,)  
+        # integrate within-step dynamics
+        sol = solve_ivp(
+            fun=lambda t, x: dynamic_eq(t, x, ld),
+            t_span=(0.0, Ts),
+            y0=xf[:, -1].reshape(-1),
+            method="RK45",
+            max_step=1e-3,
+            rtol=1e-9,
+            atol=1e-12,
+        )
+        x = sol.y[:, -1]
 
-   
-    # compute foot placement input for THIS step transition
-        e  = xf[:, -1].reshape(2,1) - xd         
-        uk = float(ud + (K @ e)[0,0])             
+        # compute foot placement input for THIS step transition
+        e = xf[:, -1].reshape(2, 1) - xd
+        uk = float(ud + (K @ e)[0, 0])
 
         u = np.append(u, u[-1] + uk)
 
-    # state reset
+        # state reset
         x_next = np.array([x[0] + x[1]*Td - uk, x[1]], dtype=float)
         xf = np.column_stack((xf, x_next))
         i += Ts + Td
 
     x_Cart = xf[0, :] + u
-    print(x_Cart)
-    print(u)
-    animate_xz_com_foot(x_Cart, u, z0) #plot
+    print("CoM x positions:", x_Cart)
+    print("Foot x positions:", u)
+    if show_plot:
+        animate_xz_com_foot(x_Cart, u, z0)
 
 
 
@@ -178,4 +174,7 @@ def main():
 # Script Entry Point
 # ==============================
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser(description="Run the H-LIP ode45-style Python solver.")
+    parser.add_argument("--no-plot", action="store_true", help="print the trajectory without opening the animation")
+    args = parser.parse_args()
+    main(show_plot=not args.no_plot)

@@ -6,7 +6,7 @@ close all
 clc
 
 %%%%%%%%%%%%%%%%%%%%%%%%%
-%%% Declear variables %%%
+%%% Declare variables %%%
 %%%%%%%%%%%%%%%%%%%%%%%%%
 
 % Model variable (Cassie)

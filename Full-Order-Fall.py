@@ -8,21 +8,48 @@ Date: 2026-01-19
 # ==============================
 import numpy as np
 from scipy.integrate import solve_ivp
-import jax.numpy as jnp
 import matplotlib.pyplot as plt
-import pinocchio as pin
 import os
+from pathlib import Path
+
+try:
+    import pinocchio as pin
+except ModuleNotFoundError as exc:
+    pin = None
+    PINOCCHIO_IMPORT_ERROR = exc
+else:
+    PINOCCHIO_IMPORT_ERROR = None
 
 # ==============================
 # Model definition
 # ==============================
-urdf = "five_link_walker.urdf"
-model = pin.buildModelFromUrdf(urdf)
-data = model.createData()           #create Pinocchio workspace
+URDF_PATH = Path(__file__).with_name("five_link_walker.urdf")
+urdf = str(URDF_PATH)
+
+if pin is not None and URDF_PATH.exists():
+    model = pin.buildModelFromUrdf(urdf)
+    data = model.createData()  # Pinocchio workspace
+else:
+    model = None
+    data = None
 
 # ==============================
 # Functions
 # ==============================
+def ensure_model_available():
+    """Validate optional full-order dependencies before running the simulation."""
+    if not URDF_PATH.exists():
+        raise FileNotFoundError(
+            f"Missing robot model: {URDF_PATH.name}. Place the URDF next to this script "
+            "before running the full-order examples."
+        )
+    if pin is None:
+        raise RuntimeError(
+            "Pinocchio is required for the full-order examples. "
+            "Install the `pin` package, then run this script again."
+        )
+
+
 def joint_idx_q(model, joint_name):  #get index of joint in q vector
     jid = model.getJointId(joint_name)
     return model.joints[jid].idx_q
@@ -288,6 +315,8 @@ def plot_full_order_sagittal_stick_v2(
 # Main Function
 # ==============================
 def main():
+    ensure_model_available()
+
     # ---- Constants / Parameters ----
     q = pin.neutral(model)
 
@@ -332,4 +361,7 @@ def main():
 # Script Entry Point
 # ==============================
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except (FileNotFoundError, RuntimeError) as exc:
+        raise SystemExit(f"Error: {exc}") from None

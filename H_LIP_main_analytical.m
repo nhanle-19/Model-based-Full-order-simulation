@@ -6,7 +6,7 @@ close all
 clc
 
 %%%%%%%%%%%%%%%%%%%%%%%%%
-%%% Declear variables %%%
+%%% Declare variables %%%
 %%%%%%%%%%%%%%%%%%%%%%%%%
 
 % Model variable (Cassie)
@@ -31,7 +31,7 @@ ud = xd(2)*(Ts + Td);                     % desired step length in P1 orbit
 %%% Simulation  %%%
 %%%%%%%%%%%%%%%%%%%
  
-out = sim('SIMrun.slx','StopTime','2.1'); % run simulation
+out = sim('SIMrun_H_LIP.slx','StopTime','2.1'); % run simulation
 
 x_pos = squeeze(out.CoM.Data);
 foot_pos = squeeze(out.footout.Data);
